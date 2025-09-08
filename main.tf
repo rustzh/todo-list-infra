@@ -45,43 +45,44 @@ provider "helm" {
 # VPC
 module "vpc" {
   source = "./modules/vpc"
-  
+
   vpc_cidr             = var.vpc_cidr
   availability_zones   = var.availability_zones
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
-  
+
   tags = var.tags
 }
 
 # EKS Cluster
 module "eks" {
   source = "./modules/eks"
-  
+
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
-  
-  vpc_id          = module.vpc.vpc_id
-  subnet_ids      = module.vpc.private_subnet_ids
-  
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnet_ids
+
   node_group_config = var.node_group_config
-  
+
   tags = var.tags
-  
+
   depends_on = [module.vpc]
 }
 
 # EKS Addons
 module "eks_addons" {
   source = "./modules/eks-addons"
-  
-  cluster_name = module.eks.cluster_name
+
+  cluster_name      = module.eks.cluster_name
   oidc_provider_arn = module.eks.oidc_provider_arn
-  
+  domain_name       = var.domain_name
+
   vpc_id = module.vpc.vpc_id
-  
+
   tags = var.tags
-  
+
   depends_on = [module.eks]
 }
 
@@ -91,6 +92,7 @@ data "aws_route53_zone" "main" {
 }
 
 data "aws_acm_certificate" "main" {
-  domain   = "*.${var.domain_name}"
-  statuses = ["ISSUED"]
+  domain      = var.domain_name
+  statuses    = ["ISSUED"]
+  most_recent = true
 }

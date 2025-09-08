@@ -13,6 +13,11 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "domain_name" {
+  description = "Domain name for External DNS"
+  type        = string
+}
+
 variable "tags" {
   description = "Common tags"
   type        = map(string)

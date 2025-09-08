@@ -13,8 +13,8 @@ resource "aws_iam_role" "ebs_csi_driver" {
         }
         Condition = {
           StringEquals = {
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:aud" = "sts.amazonaws.com"
+            "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+            "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -25,7 +25,7 @@ resource "aws_iam_role" "ebs_csi_driver" {
 }
 
 resource "aws_iam_role_policy_attachment" "ebs_csi_driver" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/Amazon_EBS_CSI_DriverPolicy"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
   role       = aws_iam_role.ebs_csi_driver.name
 }
 
@@ -44,8 +44,8 @@ resource "aws_iam_role" "aws_load_balancer_controller" {
         }
         Condition = {
           StringEquals = {
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:aud" = "sts.amazonaws.com"
+            "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -238,8 +238,8 @@ resource "aws_iam_role" "external_dns" {
         }
         Condition = {
           StringEquals = {
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:sub" = "system:serviceaccount:kube-system:external-dns"
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:aud" = "sts.amazonaws.com"
+            "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:sub" = "system:serviceaccount:kube-system:external-dns"
+            "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -342,6 +342,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   chart      = "aws-load-balancer-controller"
   namespace  = "kube-system"
   version    = "1.4.4"
+  timeout    = 600
 
   set {
     name  = "clusterName"
@@ -372,7 +373,8 @@ resource "helm_release" "external_dns" {
   repository = "https://kubernetes-sigs.github.io/external-dns/"
   chart      = "external-dns"
   namespace  = "kube-system"
-  version    = "1.13.0"
+  version    = "1.18.0"
+  timeout    = 600
 
   set {
     name  = "serviceAccount.create"
@@ -402,6 +404,11 @@ resource "helm_release" "external_dns" {
   set {
     name  = "txtOwnerId"
     value = var.cluster_name
+  }
+
+  set {
+    name  = "domainFilters[0]"
+    value = var.domain_name
   }
 
   depends_on = [aws_iam_role_policy_attachment.external_dns]
